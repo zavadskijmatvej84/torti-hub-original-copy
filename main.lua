@@ -4658,6 +4658,7 @@ end
 SpawnerCatalog = (function()
 	local module = {}
 	local syncSearch = false
+	local catalogHasOpened = false
 	local imageManifestLoaded = false
 	local imageIndexByName = {}
 	local imageAssetByKey = {}
@@ -5049,6 +5050,7 @@ SpawnerCatalog = (function()
 	end
 
 	function module.Open()
+		catalogHasOpened = true
 		overlay.Visible = true
 		module.SyncSearch(SpawnerSearchBox and SpawnerSearchBox.Text or "")
 		if RefreshSpawnerButtons then
@@ -5211,9 +5213,9 @@ SpawnerCatalog = (function()
 			nameLabel = nameLabel,
 			valueLabel = valueLabel,
 			tradable = tradable,
+			imageQueued = false,
 		}
 
-		queueCardImage(info)
 		return info
 	end
 
@@ -5265,6 +5267,14 @@ SpawnerCatalog = (function()
 			if visible then
 				visibleOrder = visibleOrder + 1
 				info.card.LayoutOrder = visibleOrder
+				if catalogHasOpened and not info.imageQueued then
+					info.imageQueued = true
+					task.defer(function()
+						if info.card.Parent then
+							queueCardImage(info)
+						end
+					end)
+				end
 			else
 				info.card.LayoutOrder = #ordered + index
 			end
